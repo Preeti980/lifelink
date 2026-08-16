@@ -10,506 +10,1079 @@
 ![JWT](https://img.shields.io/badge/JWT-Authentication-orange)
 
 ---
+# ❤️ LifeLink --- Complete Project Documentation
 
-# 📌 Project Information
+> **Smart Blood Donation & Blood Request Management Platform**
 
-| Property | Value |
-|----------|-------|
-| Project Name | LifeLink |
-| Repository | https://github.com/Preeti980/lifelink |
-| Frontend | Next.js + TypeScript |
-| Backend | Node.js + Express.js |
-| Database | PostgreSQL |
-| ORM | Prisma |
-| Authentication | JWT |
-| API | REST API |
-| State Management | React Query |
-| Form Handling | React Hook Form |
-| Validation | Zod |
-| Styling | Tailwind CSS |
-| UI Icons | Lucide React |
+LifeLink is a full-stack blood donation platform designed to connect
+**Donors, Patients, and Hospitals** through a centralized system for
+blood requests, donor acceptance, donation completion, inventory
+management, notifications, and history tracking.
 
----
+This document describes the project as it currently exists after
+implementation and frontend integration/testing. It replaces the earlier
+development-progress documentation with the **completed/current
+implementation state**.
 
-# 📖 Table of Contents
+------------------------------------------------------------------------
 
-- Project Overview
-- Problem Statement
-- Solution
-- Features
-- Technology Stack
-- System Architecture
-- User Roles
-- GitHub Repository
-- Login Credentials
-- Backend Folder Structure
-- Frontend Folder Structure
-- Backend Progress
-- Frontend Progress
-- Remaining Work
-- Database
-- API Documentation
-- Deployment
-- Future Improvements
+# 📌 1. Project Information
 
----
+  Property               Details
+  ---------------------- ----------------------------------------------
+  Project Name           LifeLink
+  Type                   Blood Donation Management Platform
+  Frontend               Next.js + React + TypeScript
+  Backend                Node.js + Express.js + TypeScript
+  Database               PostgreSQL
+  ORM                    Prisma
+  API                    REST API
+  Authentication         JWT + Refresh Token
+  Server State           TanStack React Query
+  API Client             Axios
+  Forms                  React Hook Form
+  Validation             Zod
+  Styling                Tailwind CSS
+  Icons                  Lucide React
+  Notifications UI       Sonner / dashboard notifications
+  Architecture           Feature-First + Layered Backend Architecture
+  Frontend               Next.js App Router
+  Development Frontend   `http://localhost:3000`
+  Development Backend    `http://localhost:5000`
+  Repository             `https://github.com/Preeti980/lifelink`
 
-# ❤️ Project Overview
+------------------------------------------------------------------------
 
-LifeLink is a modern Blood Donation Management Platform that connects Donors, Patients and Hospitals through one centralized application.
+# 📖 2. Project Overview
 
-The objective of LifeLink is to make blood donation faster, easier and more transparent.
+LifeLink solves a common problem in blood donation workflows: patients
+and hospitals need blood quickly, while donors need a simple way to
+discover and respond to active requests.
 
-Instead of manually calling hospitals or blood banks, patients can create requests digitally while hospitals can manage inventory and donors can easily find nearby blood requests.
+The platform provides a centralized workflow:
 
-The system provides role-based dashboards with secure authentication and real-time blood request management.
-
----
-
-# ❗ Problem Statement
-
-Many hospitals and blood banks still maintain blood inventory manually.
-
-Patients often struggle to find blood during emergencies because:
-
-- Hospitals have isolated systems
-- Blood inventory is not visible
-- Donors cannot find nearby requests
-- No centralized request system exists
-- Communication between donor and hospital is slow
-
-This leads to delays in blood availability during emergencies.
-
----
-
-# 💡 Solution
-
-LifeLink solves these problems by providing a centralized platform where:
-
-- Donors register and manage their availability.
-- Patients create blood requests.
-- Hospitals manage blood inventory.
-- Hospitals accept blood requests.
-- Donors donate blood.
-- Notifications keep users updated.
-- Donation history is maintained.
-- Inventory is automatically updated.
-
----
-
-# 🎯 Main Features
-
-## Authentication
-
-- JWT Authentication
-- Login
-- Registration
-- Refresh Token
-- Logout
-- Protected Routes
-- Role Based Authentication
-
----
-
-## Donor
-
-- Register
-- Login
-- Update Profile
-- View Nearby Blood Requests
-- Donation History
-- Notifications
-- Availability Status
-
----
-
-## Patient
-
-(Currently Under Development)
-
-Planned Features:
-
-- Register
-- Login
-- Create Blood Request
-- Track Request
-- Request History
-- Notifications
-
----
-
-## Hospital
-
-- Login
-- Hospital Profile
-- Update Profile
-- Blood Inventory
-- Accept Blood Requests
-- Complete Donation
-- Notifications
-- History
-
----
-
-## Admin
-
-(Currently Under Development)
-
-Planned Features:
-
-- User Management
-- Hospital Management
-- Analytics Dashboard
-- Reports
-- System Settings
-
----
-
-# ⚙️ Technology Stack
-
-## Frontend
-
-- Next.js (App Router)
-- React
-- TypeScript
-- Tailwind CSS
-- React Query
-- Axios
-- React Hook Form
-- Zod
-- Lucide React
-- Sonner
-
----
-
-## Backend
-
-- Node.js
-- Express.js
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- JWT
-- bcrypt
-- Zod
-
----
-
-## Database
-
-- PostgreSQL
-
-Managed using Prisma ORM.
-
----
-
-# 🏗️ System Architecture
-
-```
-                    +------------------+
-                    |      Client      |
-                    |     Next.js      |
-                    +---------+--------+
-                              |
-                              |
-                        REST API
-                              |
-                              |
-                    +---------v--------+
-                    |     Express.js   |
-                    |    Backend API   |
-                    +---------+--------+
-                              |
-                              |
-                         Prisma ORM
-                              |
-                              |
-                    +---------v--------+
-                    |   PostgreSQL     |
-                    +------------------+
+``` text
+Patient / Hospital
+        |
+        | Create Blood Request
+        v
+     PENDING
+        |
+        | Donor accepts
+        v
+     ACCEPTED
+        |
+        | Hospital completes donation
+        v
+    COMPLETED
 ```
 
----
+The important business rule implemented in the current system is:
 
-# 👥 User Roles
+> **A blood request may originate from either a Patient or a Hospital,
+> and a Donor can accept requests from both.**
 
-LifeLink currently supports four user roles.
+After a donor accepts a request:
 
-## 1. Donor
+-   A `Donation` record is created.
+-   The blood request becomes `ACCEPTED`.
+-   The request owner receives a notification.
 
-Responsibilities
+After the hospital completes the donation:
 
-- Register
-- Login
-- Donate Blood
-- Manage Profile
-- View Requests
-- View History
+-   The donation becomes `COMPLETED`.
+-   The blood request becomes `COMPLETED`.
+-   The donor receives a completion notification.
+-   History reflects the completed donation.
 
----
+------------------------------------------------------------------------
 
-## 2. Patient
+# ❗ 3. Problem Statement
 
-Responsibilities
+Traditional blood-request workflows often depend on:
 
-- Create Blood Request
-- Track Blood Request
-- Receive Notifications
+-   Phone calls
+-   Manual hospital coordination
+-   Separate blood-bank records
+-   Informal donor communication
+-   Manual inventory tracking
 
-(Currently under development)
+This creates problems such as:
 
----
+-   Delayed blood availability
+-   Difficulty finding compatible donors
+-   Poor visibility of active requests
+-   No centralized request lifecycle
+-   Limited request history
+-   Limited communication between stakeholders
 
-## 3. Hospital
+LifeLink provides a centralized digital workflow for these activities.
 
-Responsibilities
+------------------------------------------------------------------------
 
-- Manage Inventory
-- Accept Requests
-- Complete Donation
-- View History
-- Receive Notifications
+# 💡 4. Solution
 
----
+LifeLink provides:
 
-## 4. Admin
+-   Secure authentication
+-   Role-based dashboards
+-   Patient blood requests
+-   Hospital blood requests
+-   Donor request discovery
+-   Blood-group matching
+-   Donor acceptance
+-   Hospital donation completion
+-   Hospital inventory
+-   Notifications
+-   Request history
+-   Donation history
+-   Availability management
+-   Location-based request filtering
+-   Protected API endpoints
+-   PostgreSQL persistence through Prisma
 
-Responsibilities
+------------------------------------------------------------------------
 
-- Manage Users
-- Analytics
-- Reports
+# 👥 5. User Roles
 
-(Currently under development)
+LifeLink supports four roles at the architecture level:
 
----
-
-# 🌐 GitHub Repository
-
-Repository URL
-
-https://github.com/Preeti980/lifelink
-
----
-
-# 🔑 Login Credentials
-
-## ❤️ Donor
-
-Email
-
-```
-preeti@test.com
-```
-
-Password
-
-```
-Preeti@12345
-```
-
-Role
-
-```
+``` text
 DONOR
-```
-
----
-
-## 🏥 Hospital
-
-Email
-
-```
-apollo@test.com
-```
-
-Password
-
-```
-Apollo@123
-```
-
-Role
-
-```
+PATIENT
 HOSPITAL
+ADMIN
 ```
 
----
+The currently implemented and tested application flow focuses on:
 
-## 👤 Patient
-
-Not Implemented Yet
-
----
-
-## 👑 Admin
-
-Not Implemented Yet
-
----
-
-# 📁 Current Project Structure
-
-The project consists of two applications.
-
-```
-LifeLink
-
-│
-
-├── client
-
-└── server
+``` text
+PATIENT ↔ DONOR ↔ HOSPITAL
 ```
 
----
+The Admin architecture exists, while a full Admin dashboard is not part
+of the currently completed user flow.
 
-# 📂 Backend Folder
+------------------------------------------------------------------------
 
-```
-server/
+# ❤️ 6. Donor Dashboard
 
-├── prisma/
+The Donor dashboard is designed around one main purpose:
 
-├── src/
+> **Find a compatible blood request and respond to it.**
 
-│── controllers/
+## Donor navigation
 
-│── middleware/
+The donor dashboard contains the main navigation areas:
 
-│── routes/
-
-│── services/
-
-│── validators/
-
-│── utils/
-
-│── prisma/
-
-│── app.ts
-
-│── server.ts
+``` text
+Dashboard
+Nearby Requests
+History
+Notifications
+Profile
+Settings
+Logout
 ```
 
----
+------------------------------------------------------------------------
 
-# 📂 Frontend Folder
+## 6.1 Donor Dashboard
 
-The frontend has been redesigned with a Feature First Architecture.
+The donor dashboard provides the donor with:
 
+-   Overview
+-   Active blood-request information
+-   Quick navigation
+-   Notification access
+-   Profile access
+-   Request discovery
+
+The dashboard uses the shared LifeLink layout with:
+
+-   Sidebar
+-   Header
+-   User information
+-   Notification icon
+-   Role-specific navigation
+
+------------------------------------------------------------------------
+
+# 📍 7. Donor --- Nearby Requests
+
+The Nearby Requests page is one of the main donor features.
+
+Purpose:
+
+> Allow donors to discover active blood requests in their area.
+
+The UI contains:
+
+``` text
+Nearby Requests
+Find active blood requests in your area.
 ```
-client/
 
-├── src/
+## Filters
 
-│── app/
+The page supports filtering by:
 
-│── features/
+-   City
+-   Blood group
+-   Urgency
 
-│── shared/
+Example UI:
 
-│── middleware.ts
+``` text
+City
+[e.g. Lucknow]
+
+Blood group
+[All blood groups]
+
+Urgency
+[All urgency levels]
 ```
 
-Complete folder structure is explained later in this documentation.
+The page also displays the number of active/pending requests found.
 
----
+------------------------------------------------------------------------
 
-# ✅ Backend Progress
+## 7.1 Request Card
 
-Current Backend Status
+Each request card displays:
 
-✅ Authentication
+-   Blood group
+-   Units required
+-   Urgency
+-   Request status
+-   Hospital name
+-   City
+-   Request date
+-   Description
+-   View Request button
 
-✅ JWT
+Example:
 
-✅ Refresh Token
+``` text
+B-
+2 units
+MEDIUM
+PENDING
 
-✅ Role Middleware
+AK Singh Hospital Lucknow
+Lucknow
 
-✅ Donor Profile
+Requested 15 Aug 2026
 
-✅ Hospital Profile
+"please save life"
 
-✅ Blood Inventory
-
-✅ Blood Request
-
-✅ Donation
-
-✅ Notification
-
-✅ History
-
-✅ Prisma
-
-✅ PostgreSQL
-
-Backend is approximately **98% Complete**.
-
----
-
-# 🚧 Frontend Progress
-
-The frontend has recently been restarted from scratch.
-
-The old frontend has been discarded.
-
-A completely new frontend is currently being developed using a Feature First Architecture with Next.js App Router.
-
-Completed:
-
-- Project Structure
-- Global Styles
-- Providers
-- Authentication Foundation
-- Shared UI Foundation
-
-Remaining:
-
-- Dashboard
-- Donor Module
-- Patient Module
-- Hospital Module
-- Admin Module
-- Analytics
-- Charts
-- Responsive Improvements
-
-Frontend is currently around **15–20% complete**.
-
----
-
-**End of Part 1**
-# ============================================
-# PART 2
-# Database & Backend Architecture
-# ============================================
-
-# 🗄️ Database Design
-
-LifeLink uses **PostgreSQL** as the primary relational database.
-
-The project uses **Prisma ORM** for:
-
-- Database Migrations
-- Model Relationships
-- CRUD Operations
-- Query Optimization
-- Type Safety
-
-The database is normalized to reduce duplication while keeping relationships simple and maintainable.
-
----
-
-# 🧱 Database Models
-
-The backend currently contains the following models.
-
+[View request]
 ```
+
+------------------------------------------------------------------------
+
+# 🔎 8. Donor --- Request Details
+
+When a donor opens a request, the application displays detailed
+information.
+
+The request detail page includes:
+
+-   Back to requests
+-   Blood group
+-   Required units
+-   Urgency
+-   Current status
+-   Hospital
+-   Location
+-   Request date
+-   Required units
+-   Additional information
+
+Example:
+
+``` text
+Blood requirement
+A+
+
+2 units required
+
+HIGH
+PENDING
+
+Hospital
+Apollo Hospital Lucknow
+
+Location
+Lucknow
+
+Requested
+14 Aug 2026
+
+Required
+2 units
+```
+
+The donor can then choose:
+
+``` text
+Donate blood
+```
+
+------------------------------------------------------------------------
+
+# 🩸 9. Donor --- Accept Blood Request
+
+The donor acceptance flow is implemented through:
+
+``` http
+POST /api/v1/donor/requests/:id/accept
+```
+
+The backend verifies:
+
+1.  The authenticated user has a donor profile.
+2.  The requested blood request exists.
+3.  The request is still `PENDING`.
+4.  The donor's blood group matches the request.
+
+If all checks pass:
+
+``` text
+Donation created
+        ↓
+Donation = ACCEPTED
+
+Blood Request
+        ↓
+Status = ACCEPTED
+```
+
+The request owner is notified.
+
+------------------------------------------------------------------------
+
+# 🧬 10. Blood Group Matching
+
+The backend contains explicit blood-group validation.
+
+The donor cannot accept an incompatible request.
+
+The current service logic checks:
+
+``` text
+Donor bloodGroup
+        ==
+BloodRequest bloodGroup
+```
+
+If they do not match:
+
+``` text
+Your blood group does not match this request
+```
+
+This prevents an incompatible donor from accepting the request through
+the API.
+
+------------------------------------------------------------------------
+
+# 📜 11. Donor --- Donation History
+
+The donor history page records the donor's previous donation activity.
+
+History is based on the `Donation` entity and includes:
+
+-   Blood request
+-   Donation status
+-   Donation date
+-   Request details
+-   Hospital/request information
+
+The donor service uses:
+
+``` http
+GET /api/v1/donor/history
+```
+
+------------------------------------------------------------------------
+
+# 👤 12. Donor --- Profile
+
+The donor profile stores information required for donor matching and
+availability.
+
+Typical profile information:
+
+``` text
+Blood Group
+Gender
+Date of Birth
+Weight
+Address
+City
+State
+Latitude
+Longitude
+Last Donation
+Availability
+```
+
+The implemented profile APIs are:
+
+``` http
+GET /api/v1/donor/profile
+PUT /api/v1/donor/profile
+```
+
+The donor profile is stored separately from the main `User` record.
+
+------------------------------------------------------------------------
+
+# 🟢 13. Donor Availability
+
+The donor profile contains an availability flag:
+
+``` text
+available: true / false
+```
+
+Nearby-donor queries only return donors who are currently available.
+
+The donor service applies:
+
+``` text
+available = true
+```
+
+when finding nearby donors.
+
+------------------------------------------------------------------------
+
+# 🏥 14. Hospital Dashboard
+
+The Hospital dashboard provides hospital-side blood-management
+functionality.
+
+The hospital workflow includes:
+
+``` text
+Dashboard
+Profile
+Requests
+Inventory
+History
+Notifications
+Settings
+Logout
+```
+
+The hospital is responsible for:
+
+-   Creating hospital blood requests
+-   Viewing hospital requests
+-   Managing blood inventory
+-   Tracking donor acceptance
+-   Completing accepted donations
+-   Reviewing history
+-   Receiving notifications
+
+------------------------------------------------------------------------
+
+# 🩸 15. Hospital --- Blood Inventory
+
+The Hospital Inventory module manages available blood stock.
+
+The backend supports:
+
+``` http
+GET /api/v1/hospital/inventory
+PUT /api/v1/hospital/inventory
+```
+
+Example update:
+
+``` json
+{
+  "bloodGroup": "O_POSITIVE",
+  "unitsAvailable": 25
+}
+```
+
+The inventory response contains:
+
+``` text
+id
+hospitalId
+bloodGroup
+unitsAvailable
+createdAt
+updatedAt
+```
+
+The inventory model uses the hospital and blood group relationship to
+avoid duplicate blood-group records for the same hospital.
+
+------------------------------------------------------------------------
+
+# 📋 16. Hospital --- Requests
+
+Hospitals can view requests associated with their account.
+
+Endpoint:
+
+``` http
+GET /api/v1/hospital/requests
+```
+
+Hospital request records contain:
+
+``` text
+Blood group
+Units
+Hospital
+City
+Latitude
+Longitude
+Description
+Created date
+Urgency
+Status
+Request owner
+Donations
+```
+
+The current implementation has been tested with request states
+including:
+
+``` text
+PENDING
+ACCEPTED
+COMPLETED
+```
+
+------------------------------------------------------------------------
+
+# 🤝 17. Hospital --- Donor Acceptance Flow
+
+When a donor accepts a hospital-created request:
+
+``` text
+Hospital creates request
+        ↓
+PENDING
+        ↓
+Donor sees request
+        ↓
+Donor accepts
+        ↓
+Donation created
+        ↓
+Request becomes ACCEPTED
+        ↓
+Hospital sees accepted donation
+```
+
+The donor does not need to know whether the request originated from a
+patient or hospital.
+
+The donor simply sees an active blood request and can accept it when the
+blood group matches.
+
+------------------------------------------------------------------------
+
+# ✅ 18. Hospital --- Complete Donation
+
+After a donor accepts a request, the hospital completes the donation.
+
+Endpoint:
+
+``` http
+PATCH /api/v1/donation/:donationId/complete
+```
+
+Example:
+
+``` text
+PATCH /api/v1/donation/cmsueveii0003tpn4n6lhb6c4/complete
+```
+
+Only a hospital can perform this operation.
+
+The backend verifies:
+
+1.  The authenticated user has a hospital profile.
+2.  The donation exists.
+3.  The donation is currently `ACCEPTED`.
+4.  The donation belongs to the logged-in hospital.
+5.  The donation is then changed to `COMPLETED`.
+
+The request is also updated:
+
+``` text
+BloodRequest = COMPLETED
+```
+
+A notification is sent to the donor.
+
+------------------------------------------------------------------------
+
+# 🔔 19. Notification System
+
+LifeLink includes a notification system for important events.
+
+Notification records contain:
+
+``` text
+id
+userId
+title
+message
+isRead
+createdAt
+```
+
+Notification APIs include:
+
+``` http
+GET /api/v1/notifications
+PATCH /api/v1/notifications/:id/read
+PATCH /api/v1/notifications/read-all
+```
+
+------------------------------------------------------------------------
+
+## 19.1 Donor Acceptance Notification
+
+When a donor accepts a request, the request owner receives:
+
+``` text
+Blood request accepted
+
+A donor has accepted your blood request for B_NEGATIVE.
+```
+
+This flow has been tested in the Patient UI.
+
+------------------------------------------------------------------------
+
+## 19.2 Donation Completion Notification
+
+When the hospital completes an accepted donation, the donor receives:
+
+``` text
+Donation completed
+```
+
+with information about the hospital and blood donation.
+
+------------------------------------------------------------------------
+
+# 👤 20. Patient Dashboard
+
+The Patient dashboard is now implemented and integrated with the
+backend.
+
+The patient navigation contains:
+
+``` text
+Dashboard
+Blood Requests
+History
+Notifications
+Profile
+Settings
+Logout
+```
+
+The patient flow is:
+
+``` text
+Patient
+  |
+  | Create blood request
+  v
+PENDING
+  |
+  | Donor accepts
+  v
+ACCEPTED
+  |
+  | Hospital completes donation
+  v
+COMPLETED
+```
+
+------------------------------------------------------------------------
+
+# 🩸 21. Patient --- Blood Requests
+
+The Patient Blood Requests page displays current requests.
+
+The page contains:
+
+``` text
+Current Blood Requests
+
+Track your active blood requests and create
+a new request when needed.
+
+[+ New Blood Request]
+```
+
+------------------------------------------------------------------------
+
+## 21.1 Patient Request Summary
+
+The page displays counts for:
+
+``` text
+Pending
+Accepted
+Completed
+```
+
+Example:
+
+``` text
+Pending      0
+Accepted     1
+Completed    1
+```
+
+The counts are calculated from the current request data returned by the
+API.
+
+------------------------------------------------------------------------
+
+## 21.2 Patient Request Card
+
+Each request displays:
+
+-   Blood group
+-   Required units
+-   Urgency
+-   Hospital
+-   City
+-   Description
+-   Requested date
+-   Status
+
+Example:
+
+``` text
+B NEGATIVE
+2 units
+MEDIUM
+
+AK Singh Hospital Lucknow
+Lucknow
+
+please save life
+
+Requested 8/15/2026
+
+ACCEPTED
+```
+
+------------------------------------------------------------------------
+
+# 📝 22. Patient --- Create Blood Request
+
+Patients can create blood requests from the frontend.
+
+The backend endpoint is:
+
+``` http
+POST /api/v1/patient/requests
+```
+
+The request requires a patient profile.
+
+Example:
+
+``` json
+{
+  "bloodGroup": "B_NEGATIVE",
+  "units": 2,
+  "hospitalName": "AK Singh Hospital Lucknow",
+  "city": "Lucknow",
+  "latitude": 25.25,
+  "longitude": 75.897,
+  "urgency": "MEDIUM",
+  "description": "Please save life"
+}
+```
+
+The request is initially created as:
+
+``` text
+PENDING
+```
+
+------------------------------------------------------------------------
+
+# 📊 23. Patient Request Status Logic
+
+The Patient Blood Requests page currently supports:
+
+``` text
+PENDING
+ACCEPTED
+COMPLETED
+CANCELLED
+```
+
+Visual styling is different for each status.
+
+Examples:
+
+``` text
+PENDING
+Amber
+
+ACCEPTED
+Blue
+
+COMPLETED
+Green
+
+CANCELLED
+Red
+```
+
+Icons are also used for relevant states:
+
+``` text
+PENDING    → Clock
+COMPLETED  → CheckCircle
+CANCELLED  → Alert
+```
+
+------------------------------------------------------------------------
+
+# 📜 24. Patient --- Request History
+
+The Patient History page provides a table of previous blood requests.
+
+Columns:
+
+``` text
+Blood Group
+Hospital
+Units
+Urgency
+Status
+Date
+```
+
+Example:
+
+``` text
+B NEGATIVE | AK Singh Hospital Lucknow | 2 | MEDIUM | ACCEPTED | 8/15/2026
+
+A POSITIVE | Apollo Hospital Lucknow    | 2 | HIGH   | COMPLETED | 8/14/2026
+```
+
+The history API is:
+
+``` http
+GET /api/v1/patient/history
+```
+
+The backend history endpoint returns the patient's requests regardless
+of status.
+
+------------------------------------------------------------------------
+
+# 🔔 25. Patient --- Notifications
+
+The Patient Notifications page displays donor activity.
+
+The tested UI shows:
+
+``` text
+Your Notifications
+
+2 unread notifications
+```
+
+Example:
+
+``` text
+Blood request accepted
+
+A donor has accepted your blood request for B_NEGATIVE.
+
+16 Aug 2026
+```
+
+The user can:
+
+``` text
+Mark read
+Mark all as read
+```
+
+------------------------------------------------------------------------
+
+# 🧪 26. Verified Patient End-to-End Test
+
+The following flow has been successfully tested through the frontend.
+
+### Step 1 --- Patient creates request
+
+Example:
+
+``` text
+B_NEGATIVE
+2 units
+AK Singh Hospital Lucknow
+Lucknow
+MEDIUM
+```
+
+Initial state:
+
+``` text
+PENDING
+```
+
+### Step 2 --- Donor opens Nearby Requests
+
+The request appears to the donor.
+
+### Step 3 --- Donor opens request
+
+The donor sees:
+
+``` text
+B-
+2 units
+MEDIUM
+PENDING
+```
+
+### Step 4 --- Donor clicks Donate Blood
+
+The donation is successfully submitted.
+
+### Step 5 --- Patient receives notification
+
+The Patient Notifications page displays:
+
+``` text
+Blood request accepted
+```
+
+### Step 6 --- Patient request changes
+
+``` text
+PENDING
+   ↓
+ACCEPTED
+```
+
+### Step 7 --- Hospital completes donation
+
+The hospital calls:
+
+``` http
+PATCH /api/v1/donation/:donationId/complete
+```
+
+### Step 8 --- Patient request changes
+
+``` text
+ACCEPTED
+   ↓
+COMPLETED
+```
+
+### Step 9 --- Patient History updates
+
+The completed request appears in history.
+
+------------------------------------------------------------------------
+
+# 🔄 27. Complete Business Workflow
+
+## Patient-Originated Request
+
+``` text
+Patient Login
+     ↓
+Patient Dashboard
+     ↓
+Create Blood Request
+     ↓
+PENDING
+     ↓
+Donor Nearby Requests
+     ↓
+Donor opens request
+     ↓
+Blood group validation
+     ↓
+Donor clicks Donate Blood
+     ↓
+Donation ACCEPTED
+     ↓
+Blood Request ACCEPTED
+     ↓
+Patient Notification
+     ↓
+Hospital completes donation
+     ↓
+Donation COMPLETED
+     ↓
+Blood Request COMPLETED
+     ↓
+Donor Notification
+     ↓
+History Updated
+```
+
+------------------------------------------------------------------------
+
+## Hospital-Originated Request
+
+``` text
+Hospital Login
+     ↓
+Hospital Dashboard
+     ↓
+Create Blood Request
+     ↓
+PENDING
+     ↓
+Donor Nearby Requests
+     ↓
+Donor accepts
+     ↓
+Donation ACCEPTED
+     ↓
+Hospital sees accepted donation
+     ↓
+Hospital completes donation
+     ↓
+Donation COMPLETED
+     ↓
+Blood Request COMPLETED
+     ↓
+Donor Notification
+```
+
+------------------------------------------------------------------------
+
+# 🧱 28. Database Architecture
+
+LifeLink uses PostgreSQL with Prisma ORM.
+
+Main models:
+
+``` text
 User
 DonorProfile
 PatientProfile
@@ -521,29 +1094,24 @@ Notification
 RefreshToken
 ```
 
----
+------------------------------------------------------------------------
 
-# 📌 User Model
+# 👤 29. User Model
 
-The User table is the primary authentication table.
+The `User` model is the central authentication entity.
 
-Every authenticated user is stored here.
+Roles:
 
-A user can have one of the following roles.
-
-```
+``` text
 DONOR
-
 PATIENT
-
 HOSPITAL
-
 ADMIN
 ```
 
-Typical Fields
+Typical fields:
 
-```
+``` text
 id
 fullName
 email
@@ -555,2993 +1123,1784 @@ createdAt
 updatedAt
 ```
 
-Relationships
+Relationships:
 
-```
+``` text
 User
-│
-├── DonorProfile
-├── PatientProfile
-├── HospitalProfile
-├── Notification[]
-├── RefreshToken[]
+ ├── DonorProfile
+ ├── PatientProfile
+ ├── HospitalProfile
+ ├── Notification[]
+ └── RefreshToken[]
 ```
 
----
+------------------------------------------------------------------------
 
-# ❤️ Donor Profile
+# ❤️ 30. DonorProfile
 
-Stores donor-specific information.
+Stores donor-specific information:
 
-Typical Fields
-
-```
+``` text
+userId
 bloodGroup
-
-age
-
 gender
-
+dateOfBirth
 weight
-
-availability
-
 address
-
 city
-
+state
 latitude
-
 longitude
+lastDonation
+available
+createdAt
+updatedAt
 ```
 
-Relationship
+The donor profile is linked one-to-one with the user.
 
+------------------------------------------------------------------------
+
+# 👤 31. PatientProfile
+
+Stores patient-specific information.
+
+The patient request service requires a valid patient profile before
+creating a request.
+
+The profile architecture supports patient-specific data such as:
+
+``` text
+userId
+personal information
+location
+contact information
 ```
-User
 
-↓
+The exact schema remains controlled by the Prisma schema and validators
+in the project.
 
-DonorProfile
-```
+------------------------------------------------------------------------
 
-One User has One Donor Profile.
+# 🏥 32. HospitalProfile
 
----
+Stores hospital information:
 
-# 🏥 Hospital Profile
-
-Stores hospital information.
-
-Typical Fields
-
-```
+``` text
+userId
 hospitalName
-
 licenseNumber
-
 address
-
 city
-
 latitude
-
 longitude
 ```
 
-Relationship
+A hospital profile is associated with hospital inventory and
+hospital-side request/donation operations.
 
-```
-User
+------------------------------------------------------------------------
 
-↓
+# 🩸 33. BloodRequest Model
 
-HospitalProfile
+A BloodRequest represents a request for blood.
 
-↓
+Important fields:
 
-BloodInventory[]
-```
-
-One Hospital
-
-↓
-
-Many Blood Inventory Records
-
----
-
-# 👤 Patient Profile
-
-(Currently planned)
-
-Will contain
-
-```
-Blood Group
-
-Address
-
-Medical Information
-
-Emergency Contact
-
-Location
-```
-
----
-
-# 🩸 Blood Request
-
-This table represents requests created by patients.
-
-Typical Fields
-
-```
+``` text
+id
 bloodGroup
-
 units
-
 hospitalName
-
 city
-
-urgency
-
-status
-
-description
-
 latitude
-
 longitude
+description
+createdAt
+urgency
+status
+userId
+updatedAt
 ```
 
-Status
+Status lifecycle:
 
-```
+``` text
 PENDING
-
 ACCEPTED
-
 COMPLETED
-
 CANCELLED
 ```
 
-Relationship
+The `userId` identifies the user who created the request.
 
-```
-Patient
+Therefore:
 
-↓
-
-BloodRequest
-
-↓
-
-Donation
+``` text
+userId = Patient
 ```
 
----
+or:
 
-# 🏥 Blood Inventory
-
-Hospital blood stock.
-
-Example
-
-```
-Hospital A
-
-A+
-
-25
-
-O+
-
-18
-
-AB+
-
-5
+``` text
+userId = Hospital
 ```
 
-Each record stores
+depending on the request source.
 
-```
-Hospital
+------------------------------------------------------------------------
 
-Blood Group
+# ❤️ 34. Donation Model
 
-Units Available
-```
+A Donation connects:
 
-Composite Unique Key
-
-```
-hospitalId
-
-+
-
-bloodGroup
-```
-
-This prevents duplicate rows.
-
----
-
-# ❤️ Donation
-
-Created after a hospital accepts a request.
-
-Contains
-
-```
+``` text
 Donor
-
-Hospital
-
-Blood Request
-
-Status
-
-Completed Date
+   |
+Donation
+   |
+BloodRequest
 ```
 
-Status
+Important fields:
 
+``` text
+id
+donorId
+bloodRequestId
+donatedAt
+certificateUrl
+status
+createdAt
+updatedAt
 ```
-PENDING
 
+Current donation status flow:
+
+``` text
+ACCEPTED
+   ↓
 COMPLETED
 ```
 
----
+------------------------------------------------------------------------
 
-# 🔔 Notification
+# 🔔 35. Notification Model
 
-Stores system notifications.
+Notifications are connected to a user.
 
-Examples
+Important fields:
 
-```
-Blood Request Accepted
-
-Donation Completed
-
-Inventory Updated
-
-Blood Request Created
-```
-
-Fields
-
-```
+``` text
+id
+userId
 title
-
 message
-
 isRead
-
-userId
+createdAt
 ```
 
----
+Examples:
 
-# 🔑 Refresh Token
-
-Stores JWT Refresh Tokens.
-
-Purpose
-
-- Secure Login
-- Token Rotation
-- Long Session Support
-
-Fields
-
-```
-token
-
-userId
-
-expiresAt
+``` text
+Blood request accepted
+Donation completed
 ```
 
----
+------------------------------------------------------------------------
 
-# 🔗 Database Relationships
+# 🏥 36. BloodInventory Model
 
-```
-                    User
-                     │
-      ┌──────────────┼───────────────┐
-      │              │               │
-      │              │               │
- DonorProfile   PatientProfile   HospitalProfile
-      │              │               │
-      │              │               │
-      │         BloodRequest         │
-      │              │               │
-      └──────────────┼───────────────┘
-                     │
-                 Donation
-                     │
-              Notification
+Hospital inventory records contain:
 
+``` text
+id
+hospitalId
+bloodGroup
+unitsAvailable
+createdAt
+updatedAt
 ```
 
----
+The hospital and blood group combination is used to prevent duplicate
+inventory records.
 
-# 🔐 Authentication Flow
+------------------------------------------------------------------------
 
-```
-User
+# 🔐 37. Authentication Architecture
 
-↓
+LifeLink uses:
 
-Login
-
-↓
-
+``` text
 JWT Access Token
-
-↓
-
++
 Refresh Token
-
-↓
-
-Protected Routes
-
-↓
-
-Authorized APIs
 ```
 
----
+Authentication flow:
 
-# Authentication Process
-
-Step 1
-
-```
-POST
-
-/auth/login
-```
-
-↓
-
-Validate User
-
-↓
-
-Compare Password
-
-↓
-
-Generate JWT
-
-↓
-
-Generate Refresh Token
-
-↓
-
-Return
-
-```
-Access Token
-
-Refresh Token
-
-User
-```
-
----
-
-# Route Protection
-
-Every protected API uses
-
-```
-Auth Middleware
-```
-
-Flow
-
-```
-Request
-
-↓
-
-Authorization Header
-
-↓
-
-Verify JWT
-
-↓
-
-Attach User
-
-↓
-
-Controller
-```
-
----
-
-# 🩸 Blood Request Flow
-
-```
-Patient
-
-↓
-
-Create Blood Request
-
-↓
-
-Database
-
-↓
-
-Hospital Views Request
-
-↓
-
-Hospital Accepts Request
-
-↓
-
-Donation Created
-
-↓
-
-Notification Sent
-
-↓
-
-Donation Completed
-
-↓
-
-History Updated
-```
-
----
-
-# 🏥 Hospital Flow
-
-```
-Hospital Login
-
-↓
-
-Dashboard
-
-↓
-
-Manage Inventory
-
-↓
-
-Accept Blood Request
-
-↓
-
-Donation
-
-↓
-
-History
-
-↓
-
-Notification
-```
-
----
-
-# ❤️ Donor Flow
-
-```
+``` text
 Login
-
-↓
-
-Nearby Requests
-
-↓
-
-Donate Blood
-
-↓
-
-Donation History
-
-↓
-
-Notifications
+  ↓
+Validate Credentials
+  ↓
+Generate Access Token
+  ↓
+Generate Refresh Token
+  ↓
+Authenticated User
+  ↓
+Protected APIs
 ```
 
----
+Protected request:
 
-# 🔔 Notification Flow
-
-Whenever an important action happens
-
-↓
-
-Notification is created
-
-↓
-
-Stored in database
-
-↓
-
-Displayed inside dashboard
-
-↓
-
-User marks notification as read
-
-↓
-
-Database updated
-
-Current APIs
-
-```
-GET /notifications
-
-PATCH /notifications/:id/read
-
-PATCH /notifications/read-all
-```
-
----
-
-# 📜 History Flow
-
-Every completed donation is recorded.
-
-History stores
-
-```
-Blood Request
-
-Donation
-
-Hospital
-
-Donor
-
-Completion Date
-```
-
----
-
-# 🧩 Backend Layers
-
-The backend follows a layered architecture.
-
-```
-Routes
-
-↓
-
-Controllers
-
-↓
-
-Services
-
-↓
-
-Prisma
-
-↓
-
-Database
-```
-
-Responsibilities
-
-Routes
-
-↓
-
-Receive Request
-
-↓
-
-Controller
-
-↓
-
-Validate Request
-
-↓
-
-Service
-
-↓
-
-Business Logic
-
-↓
-
-Prisma
-
-↓
-
-Database Query
-
----
-
-# Current Backend Status
-
-Authentication
-
-✅ Complete
-
-Hospital Module
-
-✅ Complete
-
-Inventory
-
-✅ Complete
-
-Blood Request
-
-✅ Complete
-
-Donation
-
-✅ Complete
-
-Notification
-
-✅ Complete
-
-History
-
-✅ Complete
-
-Patient Module
-
-🚧 Pending
-
-Admin Module
-
-🚧 Pending
-
-Analytics
-
-🚧 Pending
-
-Reporting
-
-🚧 Pending
-
----
-
-# Advantages of Current Architecture
-
-✔ Clean Architecture
-
-✔ Feature Separation
-
-✔ Type Safety
-
-✔ JWT Authentication
-
-✔ Prisma ORM
-
-✔ PostgreSQL
-
-✔ Scalable
-
-✔ Production Ready
-
-✔ Easy to Maintain
-
----
-
-**End of Part 2**
-# ============================================
-# PART 3
-# REST API DOCUMENTATION
-# ============================================
-
-# 🌐 Backend Base URL
-
-Development
-
-```
-http://localhost:5000/api/v1
-```
-
-Production
-
-```
-(To be updated after deployment)
-```
-
----
-
-# Authentication
-
-Protected APIs require JWT Token.
-
-Example
-
-```
+``` http
 Authorization: Bearer <ACCESS_TOKEN>
 ```
 
----
+------------------------------------------------------------------------
 
-# Standard API Response
+# 🛡️ 38. Role-Based Authorization
 
-Every API follows the same response structure.
+The backend does not rely only on frontend navigation.
 
-Success
+Role checks are performed on protected APIs.
 
-```json
+Examples:
+
+``` text
+DONOR
+→ Accept blood request
+
+HOSPITAL
+→ Complete donation
+
+PATIENT
+→ Create patient request
+
+HOSPITAL
+→ Manage hospital inventory
+```
+
+This prevents users from performing operations belonging to another
+role.
+
+------------------------------------------------------------------------
+
+# 🏗️ 39. Backend Architecture
+
+The backend follows a layered architecture:
+
+``` text
+Routes
+   ↓
+Controllers
+   ↓
+Services
+   ↓
+Prisma
+   ↓
+PostgreSQL
+```
+
+## Routes
+
+Responsible for endpoint definitions.
+
+## Controllers
+
+Responsible for:
+
+-   Reading request data
+-   Calling services
+-   Returning API responses
+-   Passing errors to middleware
+
+## Services
+
+Contain business logic.
+
+Examples:
+
+``` text
+patientRequest.service.ts
+donor.service.ts
+donorRequest.service.ts
+donation.service.ts
+hospital.service.ts
+notification.service.ts
+```
+
+## Prisma
+
+Handles database operations and type-safe queries.
+
+------------------------------------------------------------------------
+
+# 🧩 40. Backend Service Logic
+
+## Donor Profile Service
+
+Handles:
+
+``` text
+Create/update donor profile
+Get donor profile
+Find nearby available donors
+```
+
+## Patient Request Service
+
+Handles:
+
+``` text
+Create/update patient profile
+Get patient profile
+Create patient blood request
+Get active patient requests
+Get patient request history
+```
+
+## Donation Service
+
+Handles:
+
+``` text
+Accept donation
+Complete donation
+Get donor donation history
+```
+
+------------------------------------------------------------------------
+
+# 🩸 41. Donor Acceptance Service Logic
+
+The donor acceptance operation runs inside a Prisma transaction.
+
+Flow:
+
+``` text
+Find donor profile
+       ↓
+Find blood request
+       ↓
+Check request status
+       ↓
+Check blood group
+       ↓
+Create donation
+       ↓
+Update blood request
+       ↓
+Create notification
+       ↓
+Commit transaction
+```
+
+If any step fails, the transaction is rolled back.
+
+------------------------------------------------------------------------
+
+# ✅ 42. Donation Completion Service Logic
+
+Completion also runs inside a Prisma transaction.
+
+Flow:
+
+``` text
+Find hospital profile
+       ↓
+Find donation
+       ↓
+Check donation status
+       ↓
+Verify hospital ownership
+       ↓
+Update donation
+       ↓
+Update blood request
+       ↓
+Notify donor
+       ↓
+Commit transaction
+```
+
+The hospital ownership check compares the request hospital with the
+authenticated hospital profile.
+
+------------------------------------------------------------------------
+
+# 🌐 43. API Base URL
+
+Development:
+
+``` text
+http://localhost:5000/api/v1
+```
+
+Production:
+
+``` text
+https://<deployed-backend-domain>/api/v1
+```
+
+------------------------------------------------------------------------
+
+# 📡 44. Authentication APIs
+
+``` http
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/auth/me
+POST /api/v1/auth/logout
+```
+
+------------------------------------------------------------------------
+
+# ❤️ 45. Donor APIs
+
+``` http
+GET  /api/v1/donor/profile
+PUT  /api/v1/donor/profile
+GET  /api/v1/donor/nearby
+GET  /api/v1/donor/history
+POST /api/v1/donor/requests/:id/accept
+```
+
+------------------------------------------------------------------------
+
+# 👤 46. Patient APIs
+
+``` http
+POST /api/v1/patient/profile
+GET  /api/v1/patient/profile
+POST /api/v1/patient/requests
+GET  /api/v1/patient/requests
+GET  /api/v1/patient/history
+```
+
+------------------------------------------------------------------------
+
+# 🏥 47. Hospital APIs
+
+``` http
+POST /api/v1/hospital/profile
+GET  /api/v1/hospital/profile
+PUT  /api/v1/hospital/profile
+
+GET /api/v1/hospital/inventory
+PUT /api/v1/hospital/inventory
+
+GET /api/v1/hospital/requests
+```
+
+Additional hospital request/donation endpoints are available according
+to the current backend routes.
+
+------------------------------------------------------------------------
+
+# 🩸 48. General Blood Request APIs
+
+``` http
+POST   /api/v1/request
+GET    /api/v1/request
+GET    /api/v1/request/:id
+PUT    /api/v1/request/:id
+DELETE /api/v1/request/:id
+```
+
+These general endpoints are used by the role-specific request workflow
+where applicable.
+
+------------------------------------------------------------------------
+
+# ❤️ 49. Donation APIs
+
+``` http
+POST  /api/v1/donor/requests/:id/accept
+PATCH /api/v1/donation/:id/complete
+```
+
+------------------------------------------------------------------------
+
+# 🔔 50. Notification APIs
+
+``` http
+GET   /api/v1/notifications
+PATCH /api/v1/notifications/:id/read
+PATCH /api/v1/notifications/read-all
+```
+
+------------------------------------------------------------------------
+
+# 📜 51. History APIs
+
+Donor:
+
+``` http
+GET /api/v1/donor/history
+```
+
+Patient:
+
+``` http
+GET /api/v1/patient/history
+```
+
+Hospital history is available through the hospital request/donation
+workflow.
+
+------------------------------------------------------------------------
+
+# 📦 52. API Response Format
+
+Success:
+
+``` json
 {
   "success": true,
-  "message": "Success Message",
+  "message": "Success message",
   "data": {}
 }
 ```
 
-Error
+Error:
 
-```json
+``` json
 {
   "success": false,
-  "message": "Error Message"
+  "message": "Error message"
 }
 ```
 
----
+------------------------------------------------------------------------
 
-# ============================================
-# AUTH MODULE
-# ============================================
+# 🎨 53. Frontend Architecture
 
-## Register User
+The frontend uses:
 
-POST
-
-```
-/auth/register
-```
-
-Authentication Required
-
-```
-No
-```
-
-Request
-
-```json
-{
-  "fullName": "Preeti Chauhan",
-  "email": "preeti@test.com",
-  "password": "Preeti@12345",
-  "phone": "9876543210",
-  "role": "DONOR"
-}
-```
-
-Response
-
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "accessToken": "...",
-    "refreshToken": "...",
-    "user": {}
-  }
-}
-```
-
----
-
-## Login
-
-POST
-
-```
-/auth/login
-```
-
-Authentication
-
-```
-No
-```
-
-Request
-
-```json
-{
-  "email": "preeti@test.com",
-  "password": "Preeti@12345"
-}
-```
-
-Response
-
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "accessToken": "...",
-    "refreshToken": "...",
-    "user": {}
-  }
-}
-```
-
----
-
-## Current User
-
-GET
-
-```
-/auth/me
-```
-
-Authentication
-
-```
-Yes
-```
-
-Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "...",
-    "fullName": "...",
-    "role": "DONOR"
-  }
-}
-```
-
----
-
-## Logout
-
-POST
-
-```
-/auth/logout
-```
-
-Authentication
-
-```
-Yes
-```
-
----
-
-# ============================================
-# DONOR MODULE
-# ============================================
-
-## Create Donor Profile
-
-POST
-
-```
-/donor/profile
-```
-
-Authentication
-
-```
-Required
-```
-
-Role
-
-```
-DONOR
-```
-
-Purpose
-
-Creates donor profile.
-
----
-
-## Get Donor Profile
-
-GET
-
-```
-/donor/profile
-```
-
----
-
-## Update Donor Profile
-
-PUT
-
-```
-/donor/profile
-```
-
----
-
-## Nearby Donors
-
-GET
-
-```
-/donor/nearby
-```
-
-Purpose
-
-Returns nearby available donors using location.
-
----
-
-# ============================================
-# HOSPITAL MODULE
-# ============================================
-
-## Create Hospital Profile
-
-POST
-
-```
-/hospital/profile
-```
-
-Role
-
-```
-HOSPITAL
-```
-
----
-
-## Get Hospital Profile
-
-GET
-
-```
-/hospital/profile
-```
-
----
-
-## Update Hospital Profile
-
-PUT
-
-```
-/hospital/profile
-```
-
----
-
-# ============================================
-# INVENTORY MODULE
-# ============================================
-
-## Update Inventory
-
-PUT
-
-```
-/inventory
-```
-
-Purpose
-
-Create or Update Blood Inventory.
-
-Request Example
-
-```json
-{
-    "bloodGroup":"O_POSITIVE",
-    "unitsAvailable":20
-}
-```
-
----
-
-## Get Inventory
-
-GET
-
-```
-/inventory
-```
-
-Returns
-
-```json
-[
-  {
-    "bloodGroup":"A_POSITIVE",
-    "unitsAvailable":15
-  },
-  {
-    "bloodGroup":"O_POSITIVE",
-    "unitsAvailable":10
-  }
-]
-```
-
----
-
-# ============================================
-# BLOOD REQUEST MODULE
-# ============================================
-
-## Create Blood Request
-
-POST
-
-```
-/request
-```
-
-Purpose
-
-Creates a blood request.
-
----
-
-Example
-
-```json
-{
-  "bloodGroup":"O_POSITIVE",
-  "units":2,
-  "hospitalName":"AIIMS",
-  "city":"Lucknow",
-  "urgency":"HIGH",
-  "description":"Urgent Requirement"
-}
-```
-
----
-
-## Get All Requests
-
-GET
-
-```
-/request
-```
-
-Returns
-
-All blood requests.
-
----
-
-## Get Single Request
-
-GET
-
-```
-/request/:id
-```
-
----
-
-## Update Request
-
-PUT
-
-```
-/request/:id
-```
-
----
-
-## Delete Request
-
-DELETE
-
-```
-/request/:id
-```
-
----
-
-# ============================================
-# ACCEPT REQUEST MODULE
-# ============================================
-
-## Accept Blood Request
-
-POST
-
-```
-/request/:id/accept
-```
-
-Role
-
-```
-HOSPITAL
-```
-
-Purpose
-
-Creates Donation
-
-Updates Request
-
-Sends Notification
-
----
-
-Example Response
-
-```json
-{
-  "success":true,
-  "message":"Blood request accepted"
-}
-```
-
----
-
-# ============================================
-# DONATION MODULE
-# ============================================
-
-## Complete Donation
-
-PATCH
-
-```
-/donation/:id/complete
-```
-
-Purpose
-
-Marks Donation Complete.
-
-Also
-
-- Updates History
-
-- Sends Notification
-
-- Updates Request Status
-
----
-
-Example
-
-```json
-{
-   "success":true,
-   "message":"Donation completed successfully"
-}
-```
-
----
-
-# ============================================
-# NOTIFICATION MODULE
-# ============================================
-
-## Get Notifications
-
-GET
-
-```
-/notifications
-```
-
-Returns
-
-All notifications of current user.
-
----
-
-## Mark Notification Read
-
-PATCH
-
-```
-/notifications/:id/read
-```
-
-Response
-
-```json
-{
-  "success": true,
-  "message": "Notification marked as read"
-}
-```
-
----
-
-## Mark All Notifications Read
-
-PATCH
-
-```
-/notifications/read-all
-```
-
----
-
-# ============================================
-# HISTORY MODULE
-# ============================================
-
-## Donation History
-
-GET
-
-```
-/history
-```
-
-Returns
-
-```
-Donation History
-
-Completed Donations
-
-Hospital
-
-Donor
-
-Blood Group
-
-Date
-```
-
----
-
-# ============================================
-# ROLE AUTHORIZATION
-# ============================================
-
-DONOR
-
-```
-Login
-
-Profile
-
-Nearby
-
-History
-
-Notification
-```
-
----
-
-PATIENT
-
-```
-Planned
-
-Blood Requests
-
-History
-
-Notification
-```
-
----
-
-HOSPITAL
-
-```
-Profile
-
-Inventory
-
-Accept Request
-
-Complete Donation
-
-History
-
-Notification
-```
-
----
-
-ADMIN
-
-```
-Not Yet Implemented
-```
-
----
-
-# ============================================
-# HTTP STATUS CODES
-# ============================================
-
-```
-200 OK
-
-201 Created
-
-400 Bad Request
-
-401 Unauthorized
-
-403 Forbidden
-
-404 Not Found
-
-409 Conflict
-
-500 Internal Server Error
-```
-
----
-
-# ============================================
-# COMPLETED BACKEND APIs
-# ============================================
-
-Authentication
-
-```
-✅ Register
-
-✅ Login
-
-✅ Current User
-
-✅ Logout
-```
-
-Hospital
-
-```
-✅ Create Profile
-
-✅ Update Profile
-
-✅ Get Profile
-```
-
-Inventory
-
-```
-✅ Update
-
-✅ Get
-```
-
-Blood Request
-
-```
-✅ Create
-
-✅ List
-
-✅ Update
-
-✅ Delete
-
-✅ Get By Id
-```
-
-Donation
-
-```
-✅ Accept Request
-
-✅ Complete Donation
-```
-
-Notification
-
-```
-✅ Get Notifications
-
-✅ Read Notification
-
-✅ Read All
-```
-
-History
-
-```
-✅ Donation History
-```
-
----
-
-# ============================================
-# BACKEND COMPLETION STATUS
-# ============================================
-
-Authentication
-
-```
-100%
-```
-
-Hospital
-
-```
-100%
-```
-
-Inventory
-
-```
-100%
-```
-
-Blood Request
-
-```
-100%
-```
-
-Donation
-
-```
-100%
-```
-
-Notification
-
-```
-100%
-```
-
-History
-
-```
-100%
-```
-
-Patient
-
-```
-20%
-```
-
-Admin
-
-```
-10%
-```
-
-Overall Backend Progress
-
-```
-≈ 95%
-```
-
----
-
-**End of Part 3**
-# ============================================
-# PART 4
-# FRONTEND DOCUMENTATION
-# ============================================
-
-# 🎨 Frontend Overview
-
-The LifeLink frontend is being completely rebuilt from scratch.
-
-The previous frontend has been discarded.
-
-The new frontend follows a modern **Feature First Architecture** using the **Next.js App Router**.
-
-The goal is to create a scalable, reusable and production-ready frontend that is easy to maintain and extend.
-
----
-
-# 🚀 Frontend Tech Stack
-
-Framework
-
-```
-Next.js 16
-```
-
-Language
-
-```
-TypeScript
-```
-
-Routing
-
-```
+``` text
 Next.js App Router
++
+Feature-First Architecture
 ```
 
-Styling
+High-level structure:
 
-```
-Tailwind CSS
-```
-
-API Client
-
-```
-Axios
-```
-
-Server State
-
-```
-TanStack React Query
-```
-
-Forms
-
-```
-React Hook Form
-```
-
-Validation
-
-```
-Zod
-```
-
-Icons
-
-```
-Lucide React
-```
-
-Notifications
-
-```
-Sonner
-```
-
-Animation
-
-```
-Framer Motion (Planned)
-```
-
-Charts
-
-```
-Recharts (Planned)
-```
-
----
-
-# 📁 Frontend Folder Structure
-
-```
+``` text
 client/
-
-│
-
-├── public/
-
-│
-
 ├── src/
-
-│
-
-│── app/
-
-│── features/
-
-│── shared/
-
-│── middleware.ts
+│   ├── app/
+│   ├── features/
+│   ├── shared/
+│   └── providers/
+└── middleware.ts
 ```
 
-The frontend follows Feature First Architecture instead of component-based architecture.
+------------------------------------------------------------------------
 
----
+# 📁 54. App Router Structure
 
-# 📂 App Folder
+The application contains route groups for:
 
-```
-src/app/
-
-│
-
-├── (auth)
-
-├── (dashboard)
-
-├── layout.tsx
-
-├── page.tsx
-
-├── globals.css
-```
-
-Purpose
-
-The App folder contains only routing.
-
-Business logic is never written here.
-
-Each page simply renders feature components.
-
----
-
-# Authentication Routes
-
-```
+``` text
 (auth)
-
-│
-
-├── login
-
-└── register
+(dashboard)
 ```
 
-Responsibilities
+Dashboard routes include areas such as:
 
-- Login Page
-
-- Register Page
-
-- Authentication Layout
-
----
-
-# Dashboard Routes
-
-```
+``` text
 dashboard/
-
-│
-
-├── page.tsx
-
+├── page
 ├── profile
-
 ├── requests
-
 ├── history
-
 ├── nearby
-
-├── settings
-
 ├── notifications
-
 ├── inventory
-
-├── analytics
+└── settings
 ```
 
-The Dashboard route is shared among all user roles.
+The exact visible navigation changes according to the authenticated
+user's role.
 
-The UI changes based on the authenticated user's role.
+------------------------------------------------------------------------
 
----
+# 🧩 55. Feature Structure
 
-# 🏗️ Features Folder
+Main feature modules:
 
-```
+``` text
 features/
-
-│
-
 ├── auth
-
 ├── dashboard
-
 ├── donor
-
 ├── patient
-
 ├── hospital
-
 ├── notification
-
 ├── blood-request
-
 └── admin
 ```
 
-Each feature is independent.
+Each feature can contain:
 
-Every feature owns:
-
-- API
-
-- Hooks
-
-- Components
-
-- Types
-
-- Schemas
-
-- Services
-
-This keeps the project modular and scalable.
-
----
-
-# Authentication Module
-
-```
-auth/
-
-│
-
-├── api
-
-├── components
-
-├── hooks
-
-├── schemas
-
-├── services
-
-└── types
+``` text
+api
+components
+hooks
+services
+types
+schemas
 ```
 
-Responsibilities
+This keeps feature-specific logic isolated.
 
-- Login
+------------------------------------------------------------------------
 
-- Registration
+# 🔗 56. API / Hook Architecture
 
-- Authentication
+The UI does not directly implement API business logic.
 
-- Current User
+The general flow is:
 
-- Logout
-
----
-
-# Dashboard Module
-
-Responsible for
-
-```
-Dashboard Layout
-
-Dashboard Header
-
-Quick Actions
-
-Dashboard Router
-
-Dashboard Cards
+``` text
+UI Component
+     ↓
+React Query Hook
+     ↓
+Feature API
+     ↓
+Axios
+     ↓
+Express API
+     ↓
+Service
+     ↓
+Prisma
+     ↓
+PostgreSQL
 ```
 
-This module is shared by all roles.
+This separation keeps UI and backend communication maintainable.
 
----
+------------------------------------------------------------------------
 
-# Donor Module
+# ⚛️ 57. React Query
 
-Responsibilities
+TanStack React Query is used for server state.
 
-```
-Donor Dashboard
+Examples of feature hooks include:
 
-Profile
-
-Nearby Requests
-
-Donation History
-
-Availability
-
-Notifications
-```
-
----
-
-# Patient Module
-
-(Currently Under Development)
-
-Planned Responsibilities
-
-```
-Patient Dashboard
-
-Blood Requests
-
-Nearby Hospitals
-
-History
-
-Notifications
-```
-
----
-
-# Hospital Module
-
-Responsibilities
-
-```
-Hospital Dashboard
-
-Inventory
-
-Accept Request
-
-Donation Management
-
-Analytics
-
-History
-```
-
----
-
-# Admin Module
-
-(Currently Under Development)
-
-Responsibilities
-
-```
-Dashboard
-
-Users
-
-Hospitals
-
-Analytics
-
-Reports
-```
-
----
-
-# 🧩 Shared Folder
-
-```
-shared/
-
-│
-
-├── api
-
-├── components
-
-├── constants
-
-├── hooks
-
-├── providers
-
-├── lib
-
-├── utils
-
-└── types
-```
-
-This folder contains reusable code used across the application.
-
----
-
-# Shared Components
-
-```
-components/
-
-│
-
-├── ui
-
-├── layout
-
-├── cards
-
-├── forms
-
-├── tables
-
-├── modals
-
-└── loaders
-```
-
-Purpose
-
-Avoid duplicate components.
-
-Every feature reuses components from here.
-
----
-
-# UI Components
-
-```
-Button
-
-Input
-
-Select
-
-Textarea
-
-Badge
-
-Card
-
-Loader
-```
-
-Future Components
-
-```
-Modal
-
-Drawer
-
-Pagination
-
-Tabs
-
-Avatar
-
-Dropdown
-
-Tooltip
-
-Alert
-
-Skeleton
-
-Empty State
-```
-
----
-
-# Layout Components
-
-```
-DashboardShell
-
-Navbar
-
-Sidebar
-
-SidebarFooter
-
-RoleMenu
-```
-
-Responsibilities
-
-Provide a common dashboard layout for every role.
-
----
-
-# Cards
-
-Reusable Cards
-
-```
-StatCard
-
-SummaryCard
-
-InfoCard
-```
-
-Used inside
-
-- Dashboard
-
-- Analytics
-
-- Inventory
-
-- Reports
-
----
-
-# Tables
-
-Reusable Tables
-
-```
-Inventory Table
-
-Blood Request Table
-
-History Table
-
-Notification Table
-```
-
----
-
-# Forms
-
-Reusable Form Components
-
-```
-Login
-
-Register
-
-Inventory
-
-Blood Request
-
-Profile
-```
-
----
-
-# Providers
-
-```
-providers/
-
-│
-
-├── QueryProvider
-
-└── ThemeProvider
-```
-
-Responsibilities
-
-QueryProvider
-
-- React Query
-
-- Caching
-
-- Refetching
-
-ThemeProvider
-
-- Theme Support
-
-(Currently Light Mode)
-
----
-
-# React Query Strategy
-
-Every feature has its own hooks.
-
-Example
-
-```
-useLogin()
-
-useRegister()
-
-useInventory()
-
+``` text
+usePatientRequests()
+usePatientHistory()
+usePatientProfile()
+useDonorProfile()
+useDonorRequests()
+useDonationHistory()
 useNotifications()
-
-useBloodRequests()
 ```
 
-The UI never calls Axios directly.
+React Query provides:
 
-Instead
+-   Fetching
+-   Caching
+-   Loading state
+-   Error state
+-   Refetching
+-   Mutation handling
 
-```
-UI
+------------------------------------------------------------------------
 
-↓
+# 📡 58. Axios Architecture
 
-Hook
+The shared Axios layer handles:
 
-↓
+-   Base API URL
+-   Authentication token
+-   Request interceptor
+-   Response interceptor
+-   Unauthorized responses
 
-API
+Conceptually:
 
-↓
-
-Axios
-
-↓
-
-Backend
-```
-
-This keeps business logic separated from presentation.
-
----
-
-# Axios Architecture
-
-```
-shared/api/axios.ts
+``` text
+Axios Client
+   |
+   ├── Base URL
+   ├── Authorization
+   ├── Error Handling
+   └── API Requests
 ```
 
-Responsibilities
+------------------------------------------------------------------------
 
-- Base URL
+# 🎨 59. Shared UI
 
-- JWT Token
+Shared UI components are designed to avoid duplication.
 
-- Request Interceptor
+Typical shared categories:
 
-- Response Interceptor
-
-- Logout on Unauthorized
-
----
-
-# Authentication Flow
-
-```
-Login
-
-↓
-
-JWT
-
-↓
-
-Local Storage
-
-↓
-
-Axios
-
-↓
-
-Protected API
-
-↓
-
-Dashboard
+``` text
+ui/
+layout/
+cards/
+forms/
+tables/
+modals/
+loaders/
 ```
 
----
+Examples:
 
-# Dashboard Routing
-
-After successful login
-
-```
-DONOR
-
-↓
-
-Donor Dashboard
-
---------------------
-
-HOSPITAL
-
-↓
-
-Hospital Dashboard
-
---------------------
-
-PATIENT
-
-↓
-
-Patient Dashboard
-
---------------------
-
-ADMIN
-
-↓
-
-Admin Dashboard
-```
-
-The routing is based on the authenticated user's role.
-
----
-
-# Design Principles
-
-The frontend follows these principles.
-
-✔ Feature First
-
-✔ Reusable Components
-
-✔ Strict TypeScript
-
-✔ Clean Architecture
-
-✔ Separation of Concerns
-
-✔ Single Responsibility Principle
-
-✔ Modular Design
-
-✔ Production Ready Code
-
----
-
-# UI Goals
-
-The new frontend aims to provide a premium user experience.
-
-Design inspiration includes
-
-- Vercel
-- Stripe Dashboard
-- Clerk
-- Linear
-- Notion
-
-The interface will focus on
-
-- Modern spacing
-- Responsive layouts
-- Reusable components
-- Clean typography
-- Accessibility
-- Consistent design system
-
----
-
-# Frontend Progress
-
-Completed
-
-```
-✔ Folder Structure
-
-✔ Providers
-
-✔ Axios
-
-✔ Authentication Foundation
-
-✔ Shared UI Foundation
-
-✔ Global Styling
-
-✔ Login Components
-
-✔ Register Components
-```
-
-In Progress
-
-```
-Dashboard Layout
-
-Sidebar
-
+``` text
+Button
+Input
+Select
+Textarea
+Badge
+Card
+Loader
+DashboardShell
 Navbar
-
-Role Based Routing
-```
-
-Pending
-
-```
-Donor Dashboard
-
-Hospital Dashboard
-
-Patient Dashboard
-
-Admin Dashboard
-
-Analytics
-
-Charts
-
-Responsive Polish
-
-Animations
-```
-
-Current Progress
-
-```
-Approximately 20%
-```
-
----
-
-# Frontend Coding Standards
-
-The following standards are followed throughout the project.
-
-- Strict TypeScript
-- No `any` types
-- Feature-first organization
-- Reusable shared components
-- Centralized API layer
-- React Query for server state
-- React Hook Form + Zod for forms
-- Consistent naming conventions
-- Production-ready component design
-
----
-
-# End of Part 4
-# ============================================
-# PART 5
-# DEVELOPMENT ROADMAP & DEPLOYMENT
-# ============================================
-
-# 🚧 Remaining Backend Tasks
-
-Although the backend is almost complete, a few modules are still under development.
-
----
-
-## 👤 Patient Module
-
-Current Status
-
-```
-20% Complete
-```
-
-Remaining Features
-
-- Patient Registration
-- Patient Login
-- Patient Profile
-- Update Patient Profile
-- Patient Dashboard
-- Patient History
-- Patient Notifications
-- Request Tracking
-
----
-
-## 👑 Admin Module
-
-Current Status
-
-```
-10% Complete
-```
-
-Remaining Features
-
-- Admin Authentication
-- Dashboard
-- User Management
-- Donor Management
-- Hospital Management
-- Blood Request Monitoring
-- Reports
-- Analytics
-- Settings
-
----
-
-## 📊 Analytics
-
-Planned Features
-
-- Monthly Donations
-- Blood Group Statistics
-- Hospital Performance
-- Active Requests
-- Daily Requests
-- Donor Growth
-- Inventory Reports
-
----
-
-## 📈 Reports
-
-Future Reports
-
-```
-Hospital Reports
-
-Donation Reports
-
-Monthly Reports
-
-Blood Stock Reports
-
-Donor Reports
-```
-
----
-
-# 🎨 Remaining Frontend Tasks
-
-Current Frontend Status
-
-```
-Approximately 20% Completed
-```
-
----
-
-## Authentication
-
-Completed
-
-```
-✔ Login
-
-✔ Register
-
-✔ Authentication Foundation
-
-✔ JWT Integration
-```
-
-Remaining
-
-```
-Forgot Password
-
-Reset Password
-
-Remember Me
-
-Email Verification
-
-OTP Verification
-```
-
----
-
-## Dashboard
-
-Remaining
-
-```
-Dashboard Layout
-
 Sidebar
-
-Navbar
-
-Dashboard Cards
-
-Quick Actions
-
-Charts
-
-Statistics
-
-Recent Activity
 ```
 
----
+------------------------------------------------------------------------
 
-## Donor Module
+# 🧭 60. Shared Dashboard Layout
 
-Remaining
+The dashboard uses a consistent shell containing:
 
-```
-Dashboard
-
-Profile
-
-Nearby Requests
-
-History
-
-Availability Toggle
-
-Notifications
-```
-
----
-
-## Patient Module
-
-Remaining
-
-```
-Dashboard
-
-Blood Requests
-
-History
-
-Notifications
-
-Nearby Hospitals
-```
-
----
-
-## Hospital Module
-
-Remaining
-
-```
-Dashboard
-
-Inventory UI
-
-Accept Request UI
-
-Donation UI
-
-History
-
-Analytics
-```
-
----
-
-## Admin Module
-
-Remaining
-
-```
-Dashboard
-
-Users
-
-Hospitals
-
-Reports
-
-Analytics
-
+``` text
+Sidebar
+Header
+Main Content
+User Information
+Notification Access
 Settings
+Logout
 ```
 
----
+Role-specific menu items are displayed according to the authenticated
+role.
 
-# 📂 Environment Variables
+------------------------------------------------------------------------
+
+# 🖥️ 61. Current Dashboard UI
+
+The implemented UI uses a consistent LifeLink visual language:
+
+``` text
+White cards
+Soft borders
+Rounded corners
+Light background
+Red primary actions
+Blue accepted states
+Green completed states
+Amber pending states
+Lucide icons
+Responsive layouts
+```
+
+The design is focused on:
+
+-   Clean spacing
+-   Readability
+-   Clear status hierarchy
+-   Simple request actions
+-   Role-specific navigation
+
+------------------------------------------------------------------------
+
+# 📊 62. Dashboard Status Cards
+
+The Patient Blood Requests dashboard currently displays:
+
+``` text
+Pending
+Accepted
+Completed
+```
+
+The counts are generated dynamically from the fetched request data.
+
+This prevents hardcoded status counts.
+
+------------------------------------------------------------------------
+
+# 🧪 63. Testing Performed
+
+The project has been tested using both:
+
+``` text
+Frontend UI
+Postman / API testing
+```
+
+The backend endpoints were verified independently and then integrated
+with the frontend.
+
+------------------------------------------------------------------------
+
+# ✅ 64. Authentication Testing
+
+Tested:
+
+``` text
+Registration
+Login
+JWT authentication
+Protected endpoints
+Role-based access
+Logout
+```
+
+------------------------------------------------------------------------
+
+# ✅ 65. Donor Testing
+
+Tested:
+
+``` text
+Donor profile
+Donor blood group
+Donor availability
+Nearby requests
+Request details
+Donate Blood action
+Donation creation
+Donation history
+Notifications
+```
+
+------------------------------------------------------------------------
+
+# ✅ 66. Patient Testing
+
+Tested through the frontend:
+
+``` text
+Patient profile
+Create blood request
+Current Blood Requests
+Pending status
+Accepted status
+Completed status
+Request History
+Notifications
+Donor acceptance notification
+```
+
+The B-negative patient request was successfully tested through the UI.
+
+------------------------------------------------------------------------
+
+# ✅ 67. Hospital Testing
+
+Tested:
+
+``` text
+Hospital profile
+Hospital inventory
+Inventory update
+Inventory retrieval
+Hospital requests
+Accepted donations
+Donation completion
+Request status update
+Donation completion notification
+```
+
+------------------------------------------------------------------------
+
+# 🔄 68. Verified Request Example
+
+A tested patient request:
+
+``` json
+{
+  "id": "cmsueopym0001tpn44f2egh8b",
+  "bloodGroup": "B_NEGATIVE",
+  "units": 2,
+  "hospitalName": "AK Singh Hospital Lucknow",
+  "city": "Lucknow",
+  "urgency": "MEDIUM",
+  "status": "ACCEPTED"
+}
+```
+
+The corresponding donation became:
+
+``` text
+status = ACCEPTED
+```
+
+After the hospital completed the donation, the request lifecycle was
+verified through the frontend and history.
+
+------------------------------------------------------------------------
+
+# 🔄 69. Verified Completed Request
+
+A tested request followed:
+
+``` text
+A_POSITIVE
+2 units
+Apollo Hospital Lucknow
+HIGH
+```
+
+The request changed:
+
+``` text
+PENDING
+   ↓
+ACCEPTED
+   ↓
+COMPLETED
+```
+
+The corresponding donation changed:
+
+``` text
+ACCEPTED
+   ↓
+COMPLETED
+```
+
+The Patient History UI then displayed the request as:
+
+``` text
+COMPLETED
+```
+
+------------------------------------------------------------------------
+
+# 🔔 70. Verified Notification Flow
+
+The Patient Notifications UI successfully displayed:
+
+``` text
+Blood request accepted
+
+A donor has accepted your blood request for B_NEGATIVE.
+```
+
+The notification page also supports:
+
+``` text
+Mark read
+Mark all as read
+```
+
+------------------------------------------------------------------------
+
+# 🧪 71. Important API Test
+
+Donation completion was successfully tested with:
+
+``` http
+PATCH /api/v1/donation/cmsueveii0003tpn4n6lhb6c4/complete
+```
+
+The response returned:
+
+``` json
+{
+  "success": true,
+  "message": "Donation completed successfully"
+}
+```
+
+The returned donation had:
+
+``` text
+status: COMPLETED
+```
+
+and the related blood request was updated to:
+
+``` text
+status: COMPLETED
+```
+
+------------------------------------------------------------------------
+
+# 🚦 72. HTTP Status Codes
+
+The backend uses standard HTTP status codes:
+
+``` text
+200 OK
+201 Created
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+409 Conflict
+500 Internal Server Error
+```
+
+------------------------------------------------------------------------
+
+# 🛡️ 73. Error Handling
+
+The backend uses application-level errors such as:
+
+``` text
+User not found
+Donor profile not found
+Patient profile not found
+Blood request not found
+Donation not found
+Only a donor can accept a blood request
+Only a hospital can complete a donation
+Blood group mismatch
+Request already accepted/completed
+```
+
+The frontend displays API errors through its existing error-handling/UI
+mechanisms.
+
+------------------------------------------------------------------------
+
+# 🧠 74. Important Business Rules
+
+## Rule 1 --- Request ownership
+
+A request belongs to the user who created it:
+
+``` text
+BloodRequest.userId
+```
+
+The user can be:
+
+``` text
+PATIENT
+```
+
+or:
+
+``` text
+HOSPITAL
+```
+
+------------------------------------------------------------------------
+
+## Rule 2 --- Donor acceptance
+
+Only a donor can accept a blood request.
+
+------------------------------------------------------------------------
+
+## Rule 3 --- Blood group
+
+The donor blood group must match the requested blood group.
+
+------------------------------------------------------------------------
+
+## Rule 4 --- Request status
+
+A donor can only accept:
+
+``` text
+PENDING
+```
+
+requests.
+
+------------------------------------------------------------------------
+
+## Rule 5 --- Donation completion
+
+Only a hospital can complete an accepted donation.
+
+------------------------------------------------------------------------
+
+## Rule 6 --- Hospital ownership
+
+The hospital completing a donation must correspond to the hospital
+associated with the request.
+
+------------------------------------------------------------------------
+
+## Rule 7 --- Notifications
+
+Important state transitions generate notifications.
+
+------------------------------------------------------------------------
+
+# 🗂️ 75. Project Structure
+
+The project contains two applications:
+
+``` text
+LifeLink/
+├── client/
+└── server/
+```
+
+Backend:
+
+``` text
+server/
+├── prisma/
+├── src/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── routes/
+│   ├── services/
+│   ├── validators/
+│   ├── utils/
+│   ├── prisma/
+│   ├── app.ts
+│   └── server.ts
+└── ...
+```
+
+Frontend:
+
+``` text
+client/
+├── public/
+├── src/
+│   ├── app/
+│   ├── features/
+│   ├── shared/
+│   └── providers/
+├── middleware.ts
+└── ...
+```
+
+------------------------------------------------------------------------
+
+# 🔐 76. Environment Variables
 
 ## Backend
 
-Example
+Example:
 
-```env
+``` env
 PORT=5000
-
 DATABASE_URL=
-
 JWT_SECRET=
-
 JWT_REFRESH_SECRET=
-
 JWT_EXPIRES_IN=
-
 JWT_REFRESH_EXPIRES_IN=
-
 CORS_ORIGIN=
-
 NODE_ENV=
 ```
 
----
-
 ## Frontend
 
-Example
+Development:
 
-```env
+``` env
 NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
 ```
 
----
+Production:
 
-# 💻 Running the Project
+``` env
+NEXT_PUBLIC_API_URL=https://your-backend-domain.com/api/v1
+```
 
-## Clone Repository
+Never commit real secrets to GitHub.
 
-```bash
+------------------------------------------------------------------------
+
+# 💻 77. Local Development
+
+## Clone
+
+``` bash
 git clone https://github.com/Preeti980/lifelink.git
 ```
 
----
-
 ## Backend
 
-Install Packages
-
-```bash
+``` bash
+cd server
 npm install
-```
-
-Generate Prisma
-
-```bash
 npx prisma generate
-```
-
-Run Migration
-
-```bash
 npx prisma migrate dev
-```
-
-Start Server
-
-```bash
 npm run dev
 ```
 
----
+Backend:
 
-## Frontend
-
-Install Packages
-
-```bash
-npm install
-```
-
-Run Project
-
-```bash
-npm run dev
-```
-
-Frontend
-
-```
-http://localhost:3000
-```
-
-Backend
-
-```
+``` text
 http://localhost:5000
 ```
 
----
+## Frontend
 
-# 📦 Recommended Production Stack
-
-Frontend
-
+``` bash
+cd client
+npm install
+npm run dev
 ```
+
+Frontend:
+
+``` text
+http://localhost:3000
+```
+
+------------------------------------------------------------------------
+
+# 🗄️ 78. Production Database
+
+For production:
+
+``` bash
+npx prisma generate
+npx prisma migrate deploy
+```
+
+Do not use development migration commands against a production database
+unless the deployment workflow explicitly requires them.
+
+------------------------------------------------------------------------
+
+# 🚀 79. Deployment Architecture
+
+Recommended production architecture:
+
+``` text
+                 Internet
+                    |
+                    v
+          +-------------------+
+          | Next.js Frontend  |
+          |     Vercel        |
+          +---------+---------+
+                    |
+                 HTTPS
+                    |
+                    v
+          +-------------------+
+          | Express Backend   |
+          | Render / Railway  |
+          +---------+---------+
+                    |
+                 Prisma
+                    |
+                    v
+          +-------------------+
+          | PostgreSQL        |
+          | Managed Database  |
+          +-------------------+
+```
+
+------------------------------------------------------------------------
+
+# ▲ 80. Frontend Deployment
+
+Recommended platform:
+
+``` text
 Vercel
 ```
 
-Backend
+Build:
 
+``` bash
+npm run build
 ```
+
+Start locally for production verification:
+
+``` bash
+npm run start
+```
+
+Configure:
+
+``` env
+NEXT_PUBLIC_API_URL=https://your-backend-domain.com/api/v1
+```
+
+------------------------------------------------------------------------
+
+# 🟢 81. Backend Deployment
+
+Possible platforms:
+
+``` text
 Render
-
 Railway
-
-Digital Ocean
+DigitalOcean
+VPS
 ```
 
-Database
+Production setup:
 
-```
-Supabase PostgreSQL
-
-Neon PostgreSQL
-
-Railway PostgreSQL
-```
-
-Storage
-
-```
-Cloudinary
+``` bash
+npm install
+npx prisma generate
+npx prisma migrate deploy
+npm run build
 ```
 
-Monitoring
+Then start the backend using the project's production start command.
 
+------------------------------------------------------------------------
+
+# 🌐 82. CORS Configuration
+
+Development frontend:
+
+``` text
+http://localhost:3000
 ```
-Sentry
 
-Better Stack
+Production frontend:
+
+``` text
+https://your-frontend-domain.com
 ```
 
----
+The backend should allow the production frontend origin.
 
-# 🧪 Testing Checklist
+Do not use unrestricted CORS in production.
+
+------------------------------------------------------------------------
+
+# 🔒 83. Production Security Checklist
+
+Before deployment:
+
+-   [ ] Remove real test passwords from documentation
+-   [ ] Do not commit `.env`
+-   [ ] Do not commit database passwords
+-   [ ] Do not commit JWT secrets
+-   [ ] Use HTTPS
+-   [ ] Configure restricted CORS
+-   [ ] Verify JWT expiration
+-   [ ] Verify role authorization
+-   [ ] Validate all request payloads
+-   [ ] Review production error responses
+-   [ ] Remove unnecessary test data
+-   [ ] Use production PostgreSQL credentials
+-   [ ] Verify database backups
+-   [ ] Verify frontend API URL
+
+------------------------------------------------------------------------
+
+# 🧪 84. Final Deployment Testing Checklist
 
 ## Authentication
 
-- Register
-- Login
-- Logout
-- JWT
-- Refresh Token
-
----
+-   [ ] Register donor
+-   [ ] Register patient
+-   [ ] Register hospital
+-   [ ] Login
+-   [ ] Logout
+-   [ ] Protected routes
+-   [ ] Role-based access
 
 ## Donor
 
-- Create Profile
-- Update Profile
-- View Profile
-- Nearby Donors
+-   [ ] Profile
+-   [ ] Blood group
+-   [ ] Availability
+-   [ ] Nearby Requests
+-   [ ] Search/filter
+-   [ ] Request details
+-   [ ] Donate Blood
+-   [ ] Donation history
+-   [ ] Notifications
 
----
+## Patient
+
+-   [ ] Profile
+-   [ ] Create request
+-   [ ] View current requests
+-   [ ] Pending count
+-   [ ] Accepted count
+-   [ ] Completed count
+-   [ ] Request history
+-   [ ] Notifications
+-   [ ] Mark notification read
 
 ## Hospital
 
-- Login
-- Inventory
-- Update Inventory
-- Accept Request
+-   [ ] Profile
+-   [ ] Inventory
+-   [ ] Update inventory
+-   [ ] View requests
+-   [ ] View accepted donation
+-   [ ] Complete donation
+-   [ ] Request status updates
+-   [ ] Donation status updates
+-   [ ] Notifications
+-   [ ] History
 
----
+## End-to-End
 
-## Blood Request
+-   [ ] Patient creates request
+-   [ ] Donor sees patient request
+-   [ ] Donor accepts request
+-   [ ] Patient sees `ACCEPTED`
+-   [ ] Patient receives notification
+-   [ ] Hospital sees accepted donation
+-   [ ] Hospital completes donation
+-   [ ] Patient sees `COMPLETED`
+-   [ ] Donor sees completed donation
+-   [ ] History reflects completion
 
-- Create
-- Update
-- Delete
-- Get
-- List
+Repeat the same flow for:
 
----
-
-## Donation
-
-- Accept Donation
-- Complete Donation
-
----
-
-## Notification
-
-- List Notifications
-- Mark Read
-- Mark All Read
-
----
-
-## History
-
-- Donation History
-- Request History
-
----
-
-# 📈 Future Version Roadmap
-
-## Version 1.0
-
-Completed
-
-```
-Authentication
-
-Hospital
-
-Inventory
-
-Blood Requests
-
-Donation
-
-Notification
-
-History
+``` text
+Hospital → Donor → Hospital
 ```
 
----
+------------------------------------------------------------------------
 
-## Version 1.1
+# 📈 85. Current Implementation Status
 
-Planned
-
-```
-Patient Module
-
-Admin Module
-
-Analytics
-
-Reports
-```
-
----
-
-## Version 2.0
-
-Future Improvements
-
-```
-Live Tracking
-
-Real Time Notifications
-
-Chat
-
-Google Maps
-
-Email Notifications
-
-SMS Notifications
-
-Appointment Scheduling
-
-AI Blood Recommendation
-
-Emergency Broadcast
-```
-
----
-
-## Version 3.0
-
-Future Vision
-
-```
-Machine Learning
-
-Predict Blood Demand
-
-Predict Inventory
-
-Government Portal Integration
-
-National Blood Bank Integration
-```
-
----
-
-# 📋 Coding Guidelines
-
-Backend
-
-- TypeScript
-- Clean Architecture
-- Service Layer
-- Prisma ORM
-- JWT Authentication
-- REST API
-
-Frontend
-
-- Feature First Architecture
-- Next.js App Router
-- Strict TypeScript
-- React Query
-- React Hook Form
-- Zod Validation
-- Reusable Components
-
----
-
-# 🤝 Contribution Guide
-
-Development Rules
-
-- Use Feature First Architecture.
-- Do not duplicate components.
-- Keep API calls inside feature API folders.
-- Use shared UI components.
-- Follow strict TypeScript.
-- Avoid using `any`.
-- Keep business logic inside services and hooks.
-- Maintain consistent folder structure.
-
----
-
-# 📌 Project Status
+The previous version of this document described Patient/Admin/frontend
+areas as being under development. The current implementation has
+progressed beyond that earlier state.
 
 ## Backend
 
+``` text
+Authentication       ✅
+JWT                  ✅
+Refresh Token        ✅
+Role Middleware      ✅
+Donor Profile        ✅
+Patient Profile      ✅
+Hospital Profile     ✅
+Blood Inventory      ✅
+Blood Requests       ✅
+Donor Acceptance     ✅
+Donation Completion  ✅
+Notifications        ✅
+Donor History        ✅
+Patient History      ✅
+Hospital Requests    ✅
 ```
-██████████████████████░░
-
-95%
-```
-
----
 
 ## Frontend
 
+``` text
+Authentication       ✅
+Shared Dashboard     ✅
+Donor Dashboard      ✅
+Donor Profile        ✅
+Nearby Requests      ✅
+Request Details      ✅
+Donate Blood         ✅
+Patient Dashboard    ✅
+Patient Requests     ✅
+Create Request       ✅
+Patient History      ✅
+Notifications        ✅
+Hospital Dashboard   ✅
+Hospital Inventory   ✅
+Hospital Requests    ✅
+Donation Completion  ✅
 ```
-████░░░░░░░░░░░░░░░░░░░
 
-20%
+Admin dashboard/analytics remain future expansion areas rather than part
+of the currently verified core workflow.
+
+------------------------------------------------------------------------
+
+# 📊 86. Current Core Product State
+
+The core LifeLink product flow is functional:
+
+``` text
+PATIENT
+   |
+   | Creates request
+   v
+PENDING
+   |
+   | DONOR
+   | Accepts
+   v
+ACCEPTED
+   |
+   | HOSPITAL
+   | Completes donation
+   v
+COMPLETED
 ```
 
----
+This is the primary production workflow of the current application.
 
-## Overall Project
+------------------------------------------------------------------------
 
+# 🎯 87. Future Improvements
+
+Future versions can add:
+
+## Admin
+
+``` text
+Admin Dashboard
+User Management
+Hospital Management
+Donor Management
+Patient Management
+Reports
+Analytics
+System Settings
 ```
-█████████████████░░░░░
 
-60%
+## Analytics
+
+``` text
+Monthly Donations
+Blood Group Statistics
+Hospital Performance
+Active Requests
+Daily Requests
+Donor Growth
+Inventory Reports
 ```
 
----
+## Communication
 
-# 🎯 Long-Term Goal
+``` text
+Real-Time Notifications
+Chat
+Email Notifications
+SMS Notifications
+```
 
-LifeLink aims to become a complete digital blood donation ecosystem where:
+## Location
 
-- Donors can easily donate blood.
-- Patients can quickly request blood.
-- Hospitals can efficiently manage inventory.
-- Administrators can monitor the entire system through analytics and reports.
+``` text
+Google Maps
+Live Tracking
+Advanced Nearby Search
+```
 
-The long-term vision is to reduce the time required to find blood during emergencies while improving transparency and communication among all stakeholders.
+## Advanced Features
 
----
+``` text
+Appointment Scheduling
+Emergency Broadcast
+AI Blood Recommendation
+Blood Demand Prediction
+Inventory Prediction
+```
 
-# 👨‍💻 Developer
+## External Integration
 
-**Developer**
+``` text
+Government Portal
+National Blood Bank
+Hospital Systems
+```
 
-Preeti Chauhan
+------------------------------------------------------------------------
 
-B.Tech (Computer Science & Engineering)
+# 📋 88. Coding Guidelines
+
+## Backend
+
+-   TypeScript
+-   Layered architecture
+-   Service layer
+-   Prisma ORM
+-   PostgreSQL
+-   JWT authentication
+-   REST APIs
+-   Zod validation
+-   Transactional business operations
+
+## Frontend
+
+-   Next.js App Router
+-   Feature-first architecture
+-   Strict TypeScript
+-   Reusable components
+-   React Query
+-   React Hook Form
+-   Zod validation
+-   Centralized Axios API layer
+-   Separation of concerns
+
+Avoid:
+
+``` text
+any
+duplicated components
+business logic inside UI components
+direct Axios calls from presentation components
+hardcoded API URLs
+hardcoded user-specific status values
+```
+
+------------------------------------------------------------------------
+
+# 🤝 89. Contribution Guidelines
+
+When extending LifeLink:
+
+1.  Keep features inside their feature module.
+2.  Keep API calls inside API/service layers.
+3.  Use React Query hooks for server state.
+4.  Reuse shared components.
+5.  Keep backend business logic inside services.
+6.  Validate inputs.
+7.  Preserve role-based authorization.
+8.  Use transactions for multi-step critical database operations.
+9.  Avoid duplicating logic.
+10. Do not expose secrets.
+11. Maintain the existing request lifecycle.
+12. Test both the API and frontend flow after changes.
+
+------------------------------------------------------------------------
+
+# 🧭 90. Important Development Principle
+
+The most important business flow should remain:
+
+``` text
+Request Creation
+      ↓
+Request Discovery
+      ↓
+Donor Acceptance
+      ↓
+Hospital Completion
+      ↓
+Notification
+      ↓
+History
+```
+
+Any future feature should integrate with this lifecycle rather than
+bypassing it.
+
+------------------------------------------------------------------------
+
+# 👨‍💻 91. Developer
+
+**Preeti Chauhan**
+
+B.Tech --- Computer Science & Engineering
 
 Full Stack Developer
 
-GitHub
+GitHub:
 
+``` text
 https://github.com/Preeti980
+```
 
-Project Repository
+Project:
 
+``` text
 https://github.com/Preeti980/lifelink
+```
 
----
+------------------------------------------------------------------------
 
-# 📄 License
+# 📄 92. License / Usage
 
-This project is intended for educational, portfolio, and research purposes. You may modify and extend the project according to your requirements. If used in production, ensure proper security, testing, and compliance with applicable healthcare regulations.
+LifeLink is intended as a portfolio, educational, and
+software-development project.
 
----
+Before using the platform for real healthcare operations, additional
+requirements should be addressed, including:
 
-# ❤️ Conclusion
+-   Security auditing
+-   Privacy requirements
+-   Data protection
+-   Healthcare compliance
+-   Production monitoring
+-   Backup and recovery
+-   Identity verification
+-   Blood-bank operational policies
+-   Appropriate medical/legal review
 
-LifeLink is designed as a scalable, modern, and production-ready Blood Donation Management System built with a clean architecture and a feature-first frontend.
+------------------------------------------------------------------------
 
-The backend foundation is largely complete, while the frontend is currently being rebuilt using the latest Next.js App Router architecture with reusable components and a premium UI approach.
+# ❤️ 93. Final Summary
 
-Once all planned modules are completed, LifeLink will provide a complete platform for donors, patients, hospitals, and administrators, with secure authentication, blood request management, inventory tracking, notifications, donation history, analytics, and future AI-powered enhancements.
+LifeLink is a full-stack blood donation platform built with:
 
----
+``` text
+Next.js
+React
+TypeScript
+Tailwind CSS
+TanStack React Query
+Axios
+Express.js
+Prisma
+PostgreSQL
+JWT
+Zod
+```
+
+The application now provides a complete core workflow for:
+
+``` text
+Patient
+   ↓
+Blood Request
+   ↓
+Donor
+   ↓
+Donation Acceptance
+   ↓
+Hospital
+   ↓
+Donation Completion
+   ↓
+Notifications
+   ↓
+History
+```
+
+The current frontend includes role-based dashboards and working pages
+for the core Donor, Patient, and Hospital workflows.
+
+The most important verified scenario is:
+
+``` text
+Patient creates B- request
+        ↓
+Donor sees request
+        ↓
+Donor clicks Donate Blood
+        ↓
+Patient receives notification
+        ↓
+Request becomes ACCEPTED
+        ↓
+Hospital completes donation
+        ↓
+Donation becomes COMPLETED
+        ↓
+Request becomes COMPLETED
+        ↓
+Patient History updates
+        ↓
+Donor receives completion notification
+```
+
+This document represents the current project state and should be
+maintained as the primary technical documentation for LifeLink.
+
+------------------------------------------------------------------------
 
 # End of Documentation
 
-**LifeLink v1.0 Documentation**
+**LifeLink --- Complete Project Documentation**

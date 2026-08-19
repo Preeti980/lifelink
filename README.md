@@ -470,34 +470,6 @@ Request COMPLETED
 
 ---
 
-# 📸 Screenshots
-
-Add final screenshots under:
-
-```text
-docs/
-└── screenshots/
-    ├── donor-dashboard.png
-    ├── nearby-requests.png
-    ├── request-details.png
-    ├── patient-dashboard.png
-    ├── patient-history.png
-    ├── notifications.png
-    ├── hospital-dashboard.png
-    ├── hospital-inventory.png
-    └── admin-dashboard.png
-```
-
-Example:
-
-```md
-![Donor Dashboard](docs/screenshots/donor-dashboard.png)
-![Patient Dashboard](docs/screenshots/patient-dashboard.png)
-![Hospital Dashboard](docs/screenshots/hospital-dashboard.png)
-![Admin Dashboard](docs/screenshots/admin-dashboard.png)
-```
-
----
 
 # 🔒 Security & Authorization
 
